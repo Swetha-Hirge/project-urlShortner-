@@ -80,48 +80,52 @@ const createUrl = async function (req, res) {
 
         if (urlPresent) {
 
-            await SET_ASYNC(`${longUrl}`, JSON.stringify(urlPresent))
+           
 
-            let newOne = JSON.parse(urlPresent)
-
-            return res.status(200).send({ status: true, data: newOne.longUrl })
+            res.status(200).send({ status: true, data: newOne.longUrl })
 
         }
 
-        const urlCode = shortId.generate()
+            const urlCode = shortId.generate()
 
-        const url = await urlModel.findOne({ urlCode: urlCode })
+            const url = await urlModel.findOne({ urlCode: urlCode })
 
-        if (url) {
+            if (url) {
 
-            return res.status(400).send({ status: false, message: "urlCode already exist in tha db" })
+                return res.status(400).send({ status: false, message: "urlCode already exist in tha db" })
+
+            }
+
+            const shortUrl = baseUrl + '/' + urlCode
+
+            const dupshortUrl = await urlModel.findOne({ shortUrl: shortUrl })
+
+            if (dupshortUrl) {
+
+                return res.status(400).send({ status: false, message: "shortUrl already exist in tha db" })
+
+            }
+
+            const newUrl = {
+                longUrl: longUrl,
+                shortUrl: shortUrl,
+                urlCode: urlCode
+            }
+
+
+            const createUrl = await urlModel.create(newUrl)
+
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(newUrl))
+
+            // let newOne = JSON.parse(longUrl1)
+            await SET_ASYNC(`${urlCode}`, JSON.stringify(newUrl.longUrl))
+
+            return res.status(201).send({ status: true, data: newUrl })
+
 
         }
 
-        const shortUrl = baseUrl + '/' + urlCode
-
-        const dupshortUrl = await urlModel.findOne({ shortUrl: shortUrl })
-
-        if (dupshortUrl) {
-
-            return res.status(400).send({ status: false, message: "shortUrl already exist in tha db" })
-
-        }
-
-        const newUrl = {
-            longUrl: longUrl,
-            shortUrl: shortUrl,
-            urlCode: urlCode
-        }
-
-
-        const createUrl = await urlModel.create(newUrl)
-
-        return res.status(201).send({ status: true, data: newUrl })
-
-    }
-
-    catch (err) {
+     catch (err) {
 
         return res.status(500).send({ status: false, message: err.message })
 
